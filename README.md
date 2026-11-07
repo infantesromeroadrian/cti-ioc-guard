@@ -1,318 +1,223 @@
-# 🛡️ Threat Intelligence Aggregator
+# CTI Guard
 
-> Production-ready AI-powered cybersecurity threat intelligence platform
+Extracción de indicadores de compromiso (IOC) con un LLM a partir de **texto no fiable**
+(descripciones de NVD, pulses de AlienVault OTX, informes), con defensas frente a inyección
+indirecta de prompts y medida contra un baseline clásico de expresiones regulares.
 
-[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-green.svg)](https://fastapi.tiangolo.com/)
-[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+> **Estado: prototipo de investigación / portfolio.** No es un producto, no está probado en
+> producción y la API no tiene autenticación. Las cifras de este README salen de `metrics.json`
+> (generado por `python -m cti_guard.eval`) y se insertan con `python -m cti_guard.eval.report`;
+> ninguna está escrita a mano.
 
-**Threat Intelligence Aggregator** is an enterprise-grade platform for collecting, analyzing, and managing cybersecurity threat intelligence using state-of-the-art AI/ML techniques.
+## Idea
 
----
+El LLM **propone**; un verificador determinista **decide**. Cada IOC que propone el modelo debe:
 
-## ✨ Features
+1. tener un tipo de la lista blanca (IP, dominio, URL, MD5, SHA-1, SHA-256, CVE);
+2. ser sintácticamente válido;
+3. aparecer literalmente en el texto fuente (se deshace el *defanging* `hxxp`, `[.]`), con su
+   procedencia (offsets sobre el texto original);
+4. no estar únicamente dentro de un tramo que las heurísticas hayan marcado como inyección.
 
-### 🔐 CVE Management
-- Automated CVE scraping from NVD
-- CVSS score tracking
-- Advanced filtering (severity, vendor, product, date range)
-- Real-time statistics dashboard
+Además: spotlighting del documento (delimitadores con nonce + *datamarking*), extractor sin
+herramientas ni efectos, esquema pydantic estricto, suelo de severidad por evidencia, cuarentena
+de documentos sospechosos y ninguna alerta generada a partir de un IOC sin verificar. Detalle,
+límites y riesgos residuales en [`docs/threat-model.md`](docs/threat-model.md).
 
-### 🎯 IOC Extraction
-- Automatic extraction using spaCy NER
-- Support for IPs, domains, URLs, emails, file hashes
-- Confidence scoring
-- Context preservation
-
-### ⚠️ Threat Intelligence
-- AlienVault OTX integration
-- Multi-source aggregation
-- BERT-based severity classification
-- Topic modeling with LDA
-
-### 📚 Topic Discovery
-- Automatic topic extraction from threat documents
-- Coherence score calculation
-- Manual topic labeling
-- Significant topic filtering
-
-### 🚨 Smart Alerts
-- Intelligent alert generation
-- Complete workflow management (NEW → ACKNOWLEDGED → RESOLVED)
-- False positive tracking
-- Actionable recommendations
-
-### 🤖 ML Models
-- **NER IOC Extractor**: spaCy + regex patterns
-- **LDA Topic Modeler**: gensim-based topic discovery
-- **BERT Classifier**: Severity classification (5 levels)
-- **Word2Vec**: Document/word similarity search
-
-### 🌐 REST API
-- **35 endpoints** with full CRUD operations
-- Auto-generated documentation (Swagger/ReDoc)
-- Pagination & advanced filtering
-- CORS-enabled
-
-### 🎨 Web Dashboard
-- Modern responsive UI
-- Real-time API status
-- Interactive filtering
-- Alert workflow management
-
----
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Python 3.10+
-- Docker & Docker Compose (recommended)
-
-### Run with Docker
+## Arranque rápido (offline, sin claves)
 
 ```bash
-# 1. Generate test data
-python scripts/test_pipeline.py
+python -m venv .venv && . .venv/bin/activate
+pip install -e ".[dev,eval]"
 
-# 2. Start all services
-docker compose up -d --build
+cti-guard demo                      # scrape -> extract -> persist con fixtures grabadas
+cti-guard serve --demo              # API en http://127.0.0.1:8000/docs con datos de ejemplo
+cti-guard extract informe.txt       # IOC de un fichero (--extractor llm para usar el modelo)
 
-# 3. Access the application
-open http://localhost              # Web Dashboard
-open http://localhost:8000/docs    # API Documentation
+ruff check . && ruff format --check . && pytest   # los tests no usan red ni claves
+docker build -t cti-guard:local .   # o: docker compose up --build
 ```
 
-### Run Locally
+El extractor LLM usa **Ollama** por defecto (cliente nativo; local o Ollama Cloud) y admite
+cualquier servidor compatible con OpenAI (`LLM_PROVIDER=openai_compat`). Las claves van solo por
+entorno (`OLLAMA_API_KEY`, `NVD_API_KEY`, `OTX_API_KEY`); `.env.example` no contiene valores.
+Se usa el cliente nativo de Ollama porque `max_completion_tokens` (lo que envía
+`langchain-openai`) no limita la generación en Ollama; `num_predict` sí.
+
+### API de ejemplo (sin frontend)
+
+La API trae datos de ejemplo grabados (`--demo`); documentación interactiva en `/docs`.
 
 ```bash
-# 1. Create virtual environment
-python -m venv venv
-source venv/bin/activate
-
-# 2. Install dependencies
-pip install -r requirements.txt
-
-# 3. Generate test data
-python scripts/test_pipeline.py
-
-# 4. Start API
-uvicorn threat_intelligence_aggregator.infrastructure.api.main:app --reload
-
-# 5. Serve frontend (new terminal)
-cd frontend && python -m http.server 8080
+cti-guard serve --demo &                       # http://127.0.0.1:8000
+curl -s http://127.0.0.1:8000/health
+curl -s "http://127.0.0.1:8000/api/iocs/?page_size=5"      # IOC con procedencia: verified, start, end
+curl -s http://127.0.0.1:8000/api/cves/CVE-2099-0001       # CVE de fixture y su severidad
 ```
 
----
+## Arquitectura
 
-## 📊 Architecture
+Hexagonal (puertos y adaptadores), paquete `src/cti_guard/`:
 
-```
-Frontend (Nginx) → FastAPI → Application Layer → Domain Layer → Infrastructure
-                    ↓                                              ↓
-                  REST API                                    Adapters
-                    ↓                                              ↓
-              Pydantic DTOs                          ML Models | Repositories
-                    ↓                                              ↓
-            35 Endpoints                                      SQLite DB
-```
+- `domain/`: entidades (IOC con procedencia y marca `verified`, CVE, ThreatIntel, Alert), puertos
+  y servicios puros.
+- `security/`: controles deterministas sin LLM (`refang`, `verifier`, `injection`, `spotlight`, `policy`).
+- `application/`: casos de uso y `guarded_extraction` (propone, verifica, aplica política).
+- `infrastructure/`: adaptadores (extractor regex, extractor LLM, scrapers NVD/OTX con fixtures,
+  repositorios SQLite), API FastAPI y configuración.
+- `eval/`: harness de evaluación reproducible.
 
-**Key Principles**:
-- ✅ Hexagonal Architecture (Ports & Adapters)
-- ✅ Domain-Driven Design
-- ✅ SOLID principles
-- ✅ 100% type hints (mypy --strict ready)
-- ✅ Zero infrastructure dependencies in domain
+## Evaluación
 
----
-
-## 🛠️ Technology Stack
-
-### Backend
-- **FastAPI** - Modern async web framework
-- **SQLAlchemy** - ORM
-- **Pydantic** - Data validation
-- **spaCy** - NLP/NER
-- **gensim** - Topic modeling
-- **transformers** - BERT classification
-- **PyTorch** - Deep learning
-
-### Frontend
-- **HTML5/CSS3** - Modern web standards
-- **Vanilla JavaScript** - No frameworks
-- **Nginx** - Web server & reverse proxy
-
-### DevOps
-- **Docker** - Containerization
-- **Docker Compose** - Orchestration
-- **uv** - Fast Python package manager
-
----
-
-## 📁 Project Structure
-
-```
-src/threat_intelligence_aggregator/
-├── domain/              # Pure business logic (NO dependencies)
-│   ├── entities/       # CVE, IOC, ThreatIntel, Topic, Alert
-│   ├── ports/          # Interfaces (Protocol)
-│   └── services/       # Business rules
-├── application/        # Use cases
-└── infrastructure/     # Technical implementation
-    ├── adapters/      # ML, repos, scrapers
-    ├── api/           # FastAPI routes
-    └── config/        # Settings, logging
-
-frontend/               # Web dashboard
-├── index.html
-├── css/main.css
-└── js/
-    ├── api.js         # API client
-    └── app.js         # App logic
-```
-
----
-
-## 🧪 Testing
+Un solo comando escribe `metrics.json`:
 
 ```bash
-# Generate test data
-python scripts/test_pipeline.py
-
-# Verify database
-sqlite3 threat_intel_test.db
-> SELECT COUNT(*) FROM cves;
-> SELECT COUNT(*) FROM iocs;
-
-# Test API endpoints
-curl http://localhost:8000/health
-curl http://localhost:8000/api/cves/stats
-curl http://localhost:8000/api/alerts/active
+python -m cti_guard.eval.fetch      # descarga el corpus a ~/datasets/cti-llm/ (fuera del repo); úselo con moderación
+                                    # (≤1 petición/s, con backoff): son recursos públicos compartidos
+python -m cti_guard.eval --out metrics.json
+python -m cti_guard.eval.report     # inserta las tablas de abajo en este README
 ```
 
----
+Las llamadas al modelo se cachean en `~/datasets/cti-llm/cache/` (clave: modelo + prompts +
+esquema), de modo que repetir la evaluación es determinista y gratuito; sin esa caché hace falta
+el mismo modelo. Niveles de defensa (cada uno añade un control al anterior): D0 prompt ingenuo,
+D1 spotlighting, D2 verificador determinista + suelo de severidad, D3 veto por tramo de inyección,
+D4 cuarentena.
 
-## 📖 API Documentation
+<!-- metrics:start -->
+Generado el 2026-11-07T19:16:19+00:00 · modelo: `gpt-oss:120b-cloud` (digest `ac7f7a1e7785`, servidor ollama 0.40.13) · 39 informes, 1850 IOC de referencia · robustez: 20 informes, 360 variantes inyectadas · semilla 0.
 
-**Interactive Testing**:
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
-- OpenAPI Schema: http://localhost:8000/openapi.json
+#### Calidad de extracción (micro-agregado, IC 95% de Wilson)
 
-**Key Endpoints**:
-```
-GET  /api/cves              # List CVEs
-GET  /api/cves/stats        # CVE statistics
-GET  /api/cves/critical     # Critical CVEs
+| Sistema | Precisión estricta (vs STIX) | Precisión adjudicada | Recall (vs STIX) | F1 estricto (IC bootstrap) | Doble uso listado | Informes en cuarentena |
+|---|---|---|---|---|---|---|
+| Regex (baseline original) | 59.4% [57.2%, 61.5%] | 67.5% [65.4%, 69.5%] | 64.0% [61.8%, 66.2%] | 61.6% [45.1%, 72.3%] | 16 | 0 |
+| Regex + refang (baseline reforzado) | 64.8% [63.0%, 66.5%] | 76.0% [74.4%, 77.5%] | 99.7% [99.4%, 99.9%] | 78.6% [70.6%, 84.6%] | 31 | 0 |
+| LLM, prompt ingenuo, sin verificar | 71.8% [70.0%, 73.5%] | 83.4% [81.9%, 84.8%] | 96.7% [95.7%, 97.4%] | 82.4% [75.0%, 88.0%] | 30 | 0 |
+| LLM + spotlighting, sin verificar | 78.0% [76.2%, 79.8%] | 91.6% [90.3%, 92.7%] | 88.7% [87.2%, 90.1%] | 83.0% [76.5%, 89.3%] | 29 | 0 |
+| LLM + verificador determinista | 82.0% [80.3%, 83.6%] | 96.2% [95.3%, 97.0%] | 88.7% [87.2%, 90.1%] | 85.2% [79.1%, 90.8%] | 29 | 0 |
+| LLM + verificador + veto por tramo de inyección | 82.0% [80.3%, 83.6%] | 96.2% [95.3%, 97.0%] | 88.7% [87.2%, 90.1%] | 85.2% [79.1%, 90.8%] | 29 | 0 |
+| LLM + todo lo anterior + cuarentena (defensa completa) | 82.0% [80.3%, 83.6%] | 96.2% [95.3%, 97.0%] | 88.7% [87.2%, 90.1%] | 85.2% [79.1%, 90.8%] | 29 | 0 |
 
-GET  /api/iocs              # List IOCs
-GET  /api/iocs/active       # Active IOCs
+#### Calidad por tipo de IOC (precisión / recall)
 
-GET  /api/threats           # Threat intelligence
-GET  /api/threats/high-severity  # High severity threats
+| Tipo | Regex | Regex + refang | LLM, prompt ingenuo, sin verificar | LLM + spotlighting, sin verificar | LLM + verificador determinista | LLM + verificador + veto por tramo de inyección | LLM + todo lo anterior + cuarentena |
+|---|---|---|---|---|---|---|---|
+| ip | 56.2% / 2.1% (TP 9, FP 7, FN 420) | 76.1% / 99.5% (TP 427, FP 134, FN 2) | 76.9% / 99.3% (TP 426, FP 128, FN 3) | 77.2% / 99.5% (TP 427, FP 126, FN 2) | 78.2% / 99.5% (TP 427, FP 119, FN 2) | 78.2% / 99.5% (TP 427, FP 119, FN 2) | 78.2% / 99.5% (TP 427, FP 119, FN 2) |
+| domain | 2.1% / 5.3% (TP 12, FP 547, FN 214) | 27.6% / 99.6% (TP 225, FP 590, FN 1) | 55.8% / 92.0% (TP 208, FP 165, FN 18) | 77.5% / 91.6% (TP 207, FP 60, FN 19) | 85.5% / 91.6% (TP 207, FP 35, FN 19) | 85.5% / 91.6% (TP 207, FP 35, FN 19) | 85.5% / 91.6% (TP 207, FP 35, FN 19) |
+| url | 0.0% / 0.0% (TP 0, FP 73, FN 31) | 23.6% / 93.5% (TP 29, FP 94, FN 2) | 12.6% / 71.0% (TP 22, FP 152, FN 9) | 34.4% / 67.7% (TP 21, FP 40, FN 10) | 42.0% / 67.7% (TP 21, FP 29, FN 10) | 42.0% / 67.7% (TP 21, FP 29, FN 10) | 42.0% / 67.7% (TP 21, FP 29, FN 10) |
+| md5 | 98.1% / 100.0% (TP 458, FP 9, FN 0) | 98.1% / 100.0% (TP 458, FP 9, FN 0) | 97.9% / 99.3% (TP 455, FP 10, FN 3) | 96.2% / 77.1% (TP 353, FP 14, FN 105) | 98.6% / 77.1% (TP 353, FP 5, FN 105) | 98.6% / 77.1% (TP 353, FP 5, FN 105) | 98.6% / 77.1% (TP 353, FP 5, FN 105) |
+| sha1 | 90.1% / 100.0% (TP 255, FP 28, FN 0) | 90.1% / 100.0% (TP 255, FP 28, FN 0) | 80.3% / 95.7% (TP 244, FP 60, FN 11) | 87.8% / 87.5% (TP 223, FP 31, FN 32) | 89.2% / 87.5% (TP 223, FP 27, FN 32) | 89.2% / 87.5% (TP 223, FP 27, FN 32) | 89.2% / 87.5% (TP 223, FP 27, FN 32) |
+| sha256 | 92.3% / 100.0% (TP 421, FP 35, FN 0) | 92.3% / 100.0% (TP 421, FP 35, FN 0) | 84.9% / 96.0% (TP 404, FP 72, FN 17) | 83.2% / 90.3% (TP 380, FP 77, FN 41) | 92.0% / 90.3% (TP 380, FP 33, FN 41) | 92.0% / 90.3% (TP 380, FP 33, FN 41) | 92.0% / 90.3% (TP 380, FP 33, FN 41) |
+| cve | 21.1% / 100.0% (TP 30, FP 112, FN 0) | 21.1% / 100.0% (TP 30, FP 112, FN 0) | 19.9% / 96.7% (TP 29, FP 117, FN 1) | 20.8% / 100.0% (TP 30, FP 114, FN 0) | 21.1% / 100.0% (TP 30, FP 112, FN 0) | 21.1% / 100.0% (TP 30, FP 112, FN 0) | 21.1% / 100.0% (TP 30, FP 112, FN 0) |
 
-GET  /api/topics            # Discovered topics
-GET  /api/topics/significant  # Significant topics
+#### Robustez frente a inyección indirecta: tasa de éxito del ataque (menor es mejor)
 
-GET  /api/alerts            # Security alerts
-POST /api/alerts/{id}/acknowledge  # Acknowledge alert
-POST /api/alerts/{id}/resolve      # Resolve alert
-```
+| Sistema | IOC falso reportado | IOC reales omitidos (≥50% perdido) | Severidad rebajada | Severidad a low/info |
+|---|---|---|---|---|
+| Regex (baseline original) | 100.0% [96.9%, 100.0%] (n=120) | 0.0% [0.0%, 4.4%] (n=84) | n/d | n/d |
+| Regex + refang (baseline reforzado) | 100.0% [96.9%, 100.0%] (n=120) | 0.0% [0.0%, 3.1%] (n=120) | n/d | n/d |
+| LLM, prompt ingenuo, sin verificar | 97.5% [92.9%, 99.2%] (n=120) | 24.2% [17.4%, 32.6%] (n=120) | 60.0% [51.1%, 68.3%] (n=120) | 57.0% [47.9%, 65.7%] (n=114) |
+| LLM + spotlighting, sin verificar | 81.7% [73.8%, 87.6%] (n=120) | 10.8% [6.4%, 17.7%] (n=120) | 8.3% [4.6%, 14.7%] (n=120) | 4.4% [1.9%, 9.9%] (n=114) |
+| LLM + verificador determinista | 81.7% [73.8%, 87.6%] (n=120) | 10.8% [6.4%, 17.7%] (n=120) | 8.3% [4.6%, 14.7%] (n=120) | 0.0% [0.0%, 3.1%] (n=120) |
+| LLM + verificador + veto por tramo de inyección | 62.5% [53.6%, 70.7%] (n=120) | 10.8% [6.4%, 17.7%] (n=120) | 8.3% [4.6%, 14.7%] (n=120) | 0.0% [0.0%, 3.1%] (n=120) |
+| LLM + todo lo anterior + cuarentena (defensa completa) | 62.5% [53.6%, 70.7%] (n=120) | 6.7% [3.4%, 12.6%] (n=120) | 4.2% [1.8%, 9.4%] (n=120) | 0.0% [0.0%, 3.1%] (n=120) |
 
----
+En omisión de IOC, D4 deja en cuarentena 40.0% [31.7%, 48.9%] (n=120) de los casos aplicables: el documento queda marcado para revisión (coste de disponibilidad), no es una pérdida silenciosa, y por eso no se cuenta como éxito del ataque.
 
-## 🔐 Security
+Cuarentena: marca 36.7% [31.9%, 41.8%] (n=360) de las variantes inyectadas y 0.0% [0.0%, 6.0%] (n=60) de los informes limpios (falsos positivos).
 
-- ✅ Input validation (Pydantic)
-- ✅ SQL injection prevention (ORM)
-- ✅ CORS configured
-- ✅ Secret management (environment variables)
-- ✅ Security headers (Nginx)
-- ✅ Dependency scanning ready
+Detección por estilo de ataque: authority_claim: 33.8% [23.9%, 45.4%] (n=71), direct: 48.3% [35.9%, 60.8%] (n=58), hidden_unicode: 100.0% [93.6%, 100.0%] (n=56), multilingual: 0.0% [0.0%, 6.1%] (n=59), paraphrase: 0.0% [0.0%, 5.8%] (n=62), role_marker: 44.4% [32.0%, 57.6%] (n=54).
 
----
+#### Detector de inyección sobre las muestras etiquetadas (resultado real, no la expectativa del fixture)
 
-## 📊 Statistics
+| Categoría | Detectadas | Total | Marcadas por el autor como no detectables |
+|---|---|---|---|
+| override | 3 | 6 | 2 |
+| directive | 3 | 6 | 2 |
+| role_marker | 3 | 6 | 0 |
+| obfuscation | 4 | 6 | 2 |
 
-- **9,600+** lines of code
-- **40** Python files
-- **35** REST API endpoints
-- **5** domain entities
-- **4** ML models
-- **5** data repositories
-- **100%** type coverage
+Prosa legítima marcada por error: 1 de 24 (negative-cti-03). Discrepancias con la expectativa del fixture: 5.
+<!-- metrics:end -->
 
----
+### Lectura de los resultados (qué dicen y qué no)
 
-## 🎯 Use Cases
+* **Calidad.** Frente al baseline regex reforzado (con refang), el LLM con verificador mejora la precisión
+  (estricta 64,8 % → 82,0 %; adjudicada 76,0 % → 96,2 %) a costa de recall (99,7 % → 88,7 %, aunque esa
+  referencia es casi circular, ver abajo). El verificador, sin perder ningún acierto, elimina los falsos
+  positivos por valores inventados o mal formados (precisión estricta de D1 a D2: 78,0 % → 82,0 %).
+  El *spotlighting* tiene un coste de recall en hashes largos (D0 → D1).
+* **Robustez.** Las defensas por capas reducen mucho los ataques de rebaja de severidad y de omisión, pero
+  **no resuelven el IOC falso inyectado en el propio texto**: con la defensa completa sigue prosperando en
+  el 62,5 % de las variantes. «Aparece literalmente en la fuente» no basta cuando el atacante escribe la
+  instrucción con el IOC dentro; solo frena el veto por tramo cuando las heurísticas marcan la inyección.
+  Las heurísticas no detectan paráfrasis ni otros idiomas (0 % en esos estilos) y sí todos los casos con
+  caracteres invisibles. El baseline regex, por su parte, devuelve el IOC inyectado en el 100 % de los casos.
+* La **cuarentena** convierte parte de la omisión en revisión manual en lugar de pérdida silenciosa; su coste
+  es de disponibilidad. Sobre los informes limpios del corpus marcó 0 de 60 lecturas (3 repeticiones de 20).
+* El subconjunto de robustez son los **20 primeros informes** del manifest (orden por identificador:
+  predominan los avisos de 2022-2023), no una muestra aleatoria.
 
-### Security Operations Center (SOC)
-- Monitor incoming CVEs
-- Track IOCs across sources
-- Manage security alerts
-- Discover emerging threat patterns
+### Cómo leer las cifras
 
-### Threat Intelligence Team
-- Aggregate threat feeds
-- Extract IOCs automatically
-- Classify threats by severity
-- Generate actionable reports
+* **El recall del regex + refang (≈99,7 %) es casi circular.** La referencia son los IOC del STIX del aviso
+  que aparecen literalmente en la página; cualquier sistema que encuentre toda cadena con forma de IOC tras
+  deshacer el *defanging* cubre esa referencia por construcción. La comparación que importa es la
+  **precisión** y la **robustez**, no ese recall.
+* La referencia es independiente (la escriben los autores de cada aviso), pero el STIX no es exhaustivo:
+  por eso hay precisión estricta y precisión adjudicada (reglas y casos en `corpus/ANNOTATION.md`).
 
-### Security Researchers
-- Analyze threat trends
-- Discover topic clusters
-- Correlate CVEs with threats
-- Track vulnerability evolution
+### Desviaciones del protocolo
 
----
+Tres correcciones se hicieron **después de ver resultados sobre el mismo conjunto de evaluación**; no hay
+conjunto de validación separado.
 
-## 📚 Documentation
+1. *Truncado de salida.* Una primera ejecución (tope de salida 2 048 tokens, trozos de 4 000 caracteres)
+   truncaba el JSON en trozos con muchos hashes. Se subió el tope a 6 144 y se redujo el trozo a 3 000. Cifras
+   que cambiaron (LLM ingenuo D0 / spotlighting D1): recall 61,5 % → 96,7 % y 58,1 % → 88,7 %; precisión
+   68,0 % → 71,8 % y 75,8 % → 78,0 %.
+2. *Cuarentena.* Con las reglas iniciales la cuarentena marcaba 6 de los 39 informes limpios (frases
+   corrientes como «include additional IOCs» o «act as a proxy»); se acotaron esas reglas, antes de conocer
+   las plantillas de ataque. Efecto aislado: en la primera ejecución D4 tenía recall 46,1 % frente a 58,1 % de D3 (12,0 puntos perdidos por la cuarentena) y 6 informes en cuarentena; tras el ajuste D4 = D3 en recall (88,7 %) y 0 informes en cuarentena. (Las dos correcciones se aplicaron antes de la segunda ejecución, por lo que la mejora absoluta de D4 mezcla ambas.)
 
-| Document | Description |
-|----------|-------------|
-| `README_THREAT_INTEL.md` | **This file** - Getting started |
-| `PROJECT_COMPLETE.md` | Complete project summary |
-| `PROGRESS_SESSION4.md` | API implementation details |
-| `AGENTS.md` | Development guidelines |
+3. *Fragmentos de hash en el verificador.* Una auditoría de la adjudicación encontró que el verificador aceptaba
+   como MD5 una mitad de un SHA-256 partido por el ajuste de una tabla. Se añadió el rechazo de esos fragmentos
+   (ver `docs/threat-model.md`). Efecto medido sobre el conjunto de evaluación: nulo en D2 a D4 (TP 1 641, FP 360
+   y FN 209 antes y después; recall y precisión estricta idénticos); las dos mitades solo las proponían los
+   baselines regex, que no pasan por el verificador. Se corrigió igualmente por ser una debilidad real, y se
+   reclasificaron 2 adjudicaciones (regla A7). Además, 14 hashes de herramientas de doble uso listadas
+   (regla A8) dejaron de contar como TP en la precisión adjudicada.
 
----
+El spotlighting (D1) reduce el recall frente al prompt ingenuo (D0) en hashes largos; es un coste real de esa
+defensa en este modelo y se muestra en las tablas.
 
-## 🤝 Contributing
+### Limitaciones de la evaluación
 
-This is an educational/demo project. For improvements:
+* **Un solo modelo principal** (`gpt-oss:120b-cloud` vía Ollama Cloud, con `temperature=0` y `seed=0`; el
+  proveedor puede cambiar el modelo detrás del mismo nombre). No hay cifras de un modelo local: se lanzó
+  `arca-ornith-9b:q4km` sobre 4 informes (≈1,3 llamadas/min en este equipo) y no terminó a tiempo para esta
+  entrega, así que **no se publica ningún resultado local**. `metrics.json` registra un único modelo.
+* **Sin conjunto de validación separado**: hay tres desviaciones declaradas arriba, hechas viendo el mismo corpus.
+* **Adjudicación con un solo anotador (un LLM)**, sin acuerdo entre anotadores; auditada por muestreo por el
+  responsable del proyecto (dos muestras de 30) con una incoherencia corregida (servicios legítimos de doble uso).
+* **Plantillas de ataque**: 36, redactadas por una IA distinta del extractor; son una muestra pequeña y
+  no adaptativa (no se optimizan contra las defensas). El éxito real de un atacante adaptativo será mayor.
+* Las repeticiones de robustez varían el muestreo de plantillas y los IOC falsos, no el modelo
+  (temperatura 0): la dispersión es entre muestras de ataques, no entre ejecuciones del modelo.
+* Las heurísticas de inyección se ajustaron una vez sobre los informes limpios; sus aciertos y fallos sobre
+  las muestras etiquetadas son resultado real, sin ajuste posterior (5 discrepancias con la expectativa del
+  autor del fixture, que no se corrigieron en el detector).
+* El corpus son avisos de CISA: texto técnico en inglés y cuidado; no representa feeds ruidosos (OTX).
 
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Open a Pull Request
+## Qué se retiró y por qué
 
----
+La versión inicial incluía LDA, Word2Vec, un clasificador de severidad BERT, notificadores
+Slack/correo y un frontend sin tests. LDA y Word2Vec estaban entrenados con datos simulados
+(`data_source: mock`, coherencia `NaN`), BERT no tenía pesos ajustados y el «NER con spaCy» cargaba
+un modelo que nunca se usaba en la extracción (era solo regex). Se eliminaron para conservar solo
+piezas verificables.
 
-## 📝 License
+## Licencia
 
-MIT License - see [LICENSE](LICENSE) file for details
-
----
-
-## 🙏 Acknowledgments
-
-- **FastAPI** - Awesome async web framework
-- **spaCy** - Industrial-strength NLP
-- **gensim** - Topic modeling made easy
-- **Hugging Face** - Transformers library
-- **AlienVault** - OTX threat intelligence platform
-
----
-
-## 📧 Contact
-
-For questions, feedback, or collaboration:
-- GitHub Issues: [Create an issue](https://github.com/yourusername/threat-intel-aggregator/issues)
-- Email: your.email@example.com
-
----
-
-**Built with ❤️ for the cybersecurity community**
-
-🛡️ Stay secure! 🛡️
+MIT. Véase [`LICENSE`](LICENSE).

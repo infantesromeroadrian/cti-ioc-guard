@@ -1,0 +1,15 @@
+{
+  "results": [
+    {
+      "id": "pulse-0001",
+      "name": "Synthetic pulse",
+      "description": "Synthetic OTX pulse for tests. Beaconing to 203.0.113.45.",
+      "created": "2099-01-01T00:00:00",
+      "modified": "2099-01-01T00:00:00",
+      "tags": ["ransomware", "test"],
+      "indicator_count": 1,
+      "author": {"username": "tester"},
+      "references": [{"type": "CVE", "value": "CVE-2099-0001"}]
+    }
+  ]
+}

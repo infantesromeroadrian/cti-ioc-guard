@@ -1,0 +1,12 @@
+SYNTHETIC REPORT R1 (written for tests; not a real advisory)
+
+Summary: Operators of the fictional "BlueHeron" campaign gained access through an exposed
+ExampleVPN appliance (CVE-2099-1111) and staged tooling on the host.
+
+Indicators of compromise
+Command and control: 203.0.113.45 and update-check[.]example[.]net
+Staging URL: hxxps://files-cdn[.]example[.]net/pkg/setup.bin
+Dropper SHA256: 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08
+Loader MD5: 5d41402abc4b2a76b9719d911017c592
+
+Defenders can find general guidance at www.cisa.gov and www.example.com (legitimate sites, not indicators).

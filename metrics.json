@@ -1,0 +1,1706 @@
+{
+  "meta": {
+    "generated_at": "2026-11-07T19:16:19+00:00",
+    "python": "3.12.13",
+    "platform": "Linux-7.3.1-1-cachyos-x86_64-with-glibc2.44",
+    "model": {
+      "provider": "ollama",
+      "name": "gpt-oss:120b-cloud",
+      "digest": "ac7f7a1e7785",
+      "server_version": "0.40.13"
+    },
+    "seed": 0,
+    "robust_reports": 20,
+    "variants": 360,
+    "repetitions": 3,
+    "variants_per_attack": 2,
+    "templates": 36,
+    "corpus": {
+      "reports": 39,
+      "gold_iocs": 1850,
+      "gold_sha256": "5e0c892b5c74628cd99ab60b5f32f1cfcb40e3a851bae85af04bd352284206d8"
+    }
+  },
+  "notes": {
+    "recall_circularity": "Reference IOC = STIX indicators that occur literally in the page body. A system that finds every IOC-shaped string after undoing defanging (regex_refang) therefore scores recall close to 100% by construction. Compare systems on precision and on robustness, not on this recall.",
+    "precision": "precision is vs STIX (strict); precision_adjudicated adds manually adjudicated true positives.",
+    "protocol_deviations": [
+      "Output-token cap raised (2048 -> 6144) and chunk size reduced (4000 -> 3000 chars) after a first run on the same corpus showed truncated JSON on hash-heavy chunks.",
+      "Injection heuristics tuned on the 39 clean reports after they flagged 6 of them (rules 'persona_switch' and 'force_indicator' were too broad); done before seeing any attack templates.",
+      "Verifier now rejects MD5/SHA-1 values that are fragments of a 64-hex hash wrapped by table layout (found by an audit of adjudications). Measured effect on the evaluation set: none for llm_d2..d4 (TP 1641 / FP 360 / FN 209 before and after; strict precision and recall unchanged); 2 adjudications reclassified (A7); 14 dual-use-tool hashes excluded from adjudicated TP (A8)."
+    ]
+  },
+  "injection_fixture": {
+    "positives": {
+      "override": {
+        "total": 6,
+        "detected": 3,
+        "expected_undetectable": 2
+      },
+      "directive": {
+        "total": 6,
+        "detected": 3,
+        "expected_undetectable": 2
+      },
+      "role_marker": {
+        "total": 6,
+        "detected": 3,
+        "expected_undetectable": 0
+      },
+      "obfuscation": {
+        "total": 6,
+        "detected": 4,
+        "expected_undetectable": 2
+      }
+    },
+    "negatives": {
+      "total": 24,
+      "flagged": 1,
+      "flagged_ids": [
+        "negative-cti-03"
+      ]
+    },
+    "disagreements_with_fixture_expectation": 5
+  },
+  "quality": {
+    "regex": {
+      "per_type": {
+        "ip": {
+          "tp": 9,
+          "fp": 7,
+          "fn": 420,
+          "precision": 0.5625,
+          "precision_ci95": [
+            0.3318,
+            0.769
+          ],
+          "recall": 0.021,
+          "recall_ci95": [
+            0.0111,
+            0.0394
+          ],
+          "f1": 0.0404
+        },
+        "domain": {
+          "tp": 12,
+          "fp": 547,
+          "fn": 214,
+          "precision": 0.0215,
+          "precision_ci95": [
+            0.0123,
+            0.0371
+          ],
+          "recall": 0.0531,
+          "recall_ci95": [
+            0.0306,
+            0.0905
+          ],
+          "f1": 0.0306
+        },
+        "url": {
+          "tp": 0,
+          "fp": 73,
+          "fn": 31,
+          "precision": 0.0,
+          "precision_ci95": [
+            0.0,
+            0.05
+          ],
+          "recall": 0.0,
+          "recall_ci95": [
+            0.0,
+            0.1103
+          ],
+          "f1": null
+        },
+        "md5": {
+          "tp": 458,
+          "fp": 9,
+          "fn": 0,
+          "precision": 0.9807,
+          "precision_ci95": [
+            0.9638,
+            0.9898
+          ],
+          "recall": 1.0,
+          "recall_ci95": [
+            0.9917,
+            1.0
+          ],
+          "f1": 0.9903
+        },
+        "sha1": {
+          "tp": 255,
+          "fp": 28,
+          "fn": 0,
+          "precision": 0.9011,
+          "precision_ci95": [
+            0.8607,
+            0.9307
+          ],
+          "recall": 1.0,
+          "recall_ci95": [
+            0.9852,
+            1.0
+          ],
+          "f1": 0.948
+        },
+        "sha256": {
+          "tp": 421,
+          "fp": 35,
+          "fn": 0,
+          "precision": 0.9232,
+          "precision_ci95": [
+            0.8951,
+            0.9443
+          ],
+          "recall": 1.0,
+          "recall_ci95": [
+            0.991,
+            1.0
+          ],
+          "f1": 0.9601
+        },
+        "cve": {
+          "tp": 30,
+          "fp": 112,
+          "fn": 0,
+          "precision": 0.2113,
+          "precision_ci95": [
+            0.1522,
+            0.2856
+          ],
+          "recall": 1.0,
+          "recall_ci95": [
+            0.8865,
+            1.0
+          ],
+          "f1": 0.3488
+        }
+      },
+      "micro": {
+        "tp": 1185,
+        "fp": 811,
+        "fn": 665,
+        "precision": 0.5937,
+        "precision_ci95": [
+          0.572,
+          0.615
+        ],
+        "recall": 0.6405,
+        "recall_ci95": [
+          0.6184,
+          0.6621
+        ],
+        "f1": 0.6162,
+        "adjudicated_extra_tp": 162,
+        "precision_adjudicated": 0.6748,
+        "precision_adjudicated_ci95": [
+          0.654,
+          0.695
+        ],
+        "f1_bootstrap_ci95": [
+          0.4507,
+          0.7233
+        ],
+        "unadjudicated_extractions": 0,
+        "dual_use_listed": 16
+      },
+      "quarantined_reports": 0,
+      "llm_errors": 0
+    },
+    "regex_refang": {
+      "per_type": {
+        "ip": {
+          "tp": 427,
+          "fp": 134,
+          "fn": 2,
+          "precision": 0.7611,
+          "precision_ci95": [
+            0.7242,
+            0.7946
+          ],
+          "recall": 0.9953,
+          "recall_ci95": [
+            0.9832,
+            0.9987
+          ],
+          "f1": 0.8626
+        },
+        "domain": {
+          "tp": 225,
+          "fp": 590,
+          "fn": 1,
+          "precision": 0.2761,
+          "precision_ci95": [
+            0.2465,
+            0.3078
+          ],
+          "recall": 0.9956,
+          "recall_ci95": [
+            0.9754,
+            0.9992
+          ],
+          "f1": 0.4323
+        },
+        "url": {
+          "tp": 29,
+          "fp": 94,
+          "fn": 2,
+          "precision": 0.2358,
+          "precision_ci95": [
+            0.1695,
+            0.3181
+          ],
+          "recall": 0.9355,
+          "recall_ci95": [
+            0.7928,
+            0.9821
+          ],
+          "f1": 0.3766
+        },
+        "md5": {
+          "tp": 458,
+          "fp": 9,
+          "fn": 0,
+          "precision": 0.9807,
+          "precision_ci95": [
+            0.9638,
+            0.9898
+          ],
+          "recall": 1.0,
+          "recall_ci95": [
+            0.9917,
+            1.0
+          ],
+          "f1": 0.9903
+        },
+        "sha1": {
+          "tp": 255,
+          "fp": 28,
+          "fn": 0,
+          "precision": 0.9011,
+          "precision_ci95": [
+            0.8607,
+            0.9307
+          ],
+          "recall": 1.0,
+          "recall_ci95": [
+            0.9852,
+            1.0
+          ],
+          "f1": 0.948
+        },
+        "sha256": {
+          "tp": 421,
+          "fp": 35,
+          "fn": 0,
+          "precision": 0.9232,
+          "precision_ci95": [
+            0.8951,
+            0.9443
+          ],
+          "recall": 1.0,
+          "recall_ci95": [
+            0.991,
+            1.0
+          ],
+          "f1": 0.9601
+        },
+        "cve": {
+          "tp": 30,
+          "fp": 112,
+          "fn": 0,
+          "precision": 0.2113,
+          "precision_ci95": [
+            0.1522,
+            0.2856
+          ],
+          "recall": 1.0,
+          "recall_ci95": [
+            0.8865,
+            1.0
+          ],
+          "f1": 0.3488
+        }
+      },
+      "micro": {
+        "tp": 1845,
+        "fp": 1002,
+        "fn": 5,
+        "precision": 0.6481,
+        "precision_ci95": [
+          0.6303,
+          0.6654
+        ],
+        "recall": 0.9973,
+        "recall_ci95": [
+          0.9937,
+          0.9988
+        ],
+        "f1": 0.7856,
+        "adjudicated_extra_tp": 318,
+        "precision_adjudicated": 0.7597,
+        "precision_adjudicated_ci95": [
+          0.7437,
+          0.7751
+        ],
+        "f1_bootstrap_ci95": [
+          0.7059,
+          0.8459
+        ],
+        "unadjudicated_extractions": 0,
+        "dual_use_listed": 31
+      },
+      "quarantined_reports": 0,
+      "llm_errors": 0
+    },
+    "llm_d0_naive": {
+      "per_type": {
+        "ip": {
+          "tp": 426,
+          "fp": 128,
+          "fn": 3,
+          "precision": 0.769,
+          "precision_ci95": [
+            0.7321,
+            0.8021
+          ],
+          "recall": 0.993,
+          "recall_ci95": [
+            0.9796,
+            0.9976
+          ],
+          "f1": 0.8667
+        },
+        "domain": {
+          "tp": 208,
+          "fp": 165,
+          "fn": 18,
+          "precision": 0.5576,
+          "precision_ci95": [
+            0.5069,
+            0.6072
+          ],
+          "recall": 0.9204,
+          "recall_ci95": [
+            0.8776,
+            0.949
+          ],
+          "f1": 0.6945
+        },
+        "url": {
+          "tp": 22,
+          "fp": 152,
+          "fn": 9,
+          "precision": 0.1264,
+          "precision_ci95": [
+            0.085,
+            0.184
+          ],
+          "recall": 0.7097,
+          "recall_ci95": [
+            0.5341,
+            0.839
+          ],
+          "f1": 0.2146
+        },
+        "md5": {
+          "tp": 455,
+          "fp": 10,
+          "fn": 3,
+          "precision": 0.9785,
+          "precision_ci95": [
+            0.9609,
+            0.9883
+          ],
+          "recall": 0.9934,
+          "recall_ci95": [
+            0.9809,
+            0.9978
+          ],
+          "f1": 0.9859
+        },
+        "sha1": {
+          "tp": 244,
+          "fp": 60,
+          "fn": 11,
+          "precision": 0.8026,
+          "precision_ci95": [
+            0.7542,
+            0.8435
+          ],
+          "recall": 0.9569,
+          "recall_ci95": [
+            0.9244,
+            0.9757
+          ],
+          "f1": 0.873
+        },
+        "sha256": {
+          "tp": 404,
+          "fp": 72,
+          "fn": 17,
+          "precision": 0.8487,
+          "precision_ci95": [
+            0.8138,
+            0.8781
+          ],
+          "recall": 0.9596,
+          "recall_ci95": [
+            0.9363,
+            0.9746
+          ],
+          "f1": 0.9008
+        },
+        "cve": {
+          "tp": 29,
+          "fp": 117,
+          "fn": 1,
+          "precision": 0.1986,
+          "precision_ci95": [
+            0.142,
+            0.2707
+          ],
+          "recall": 0.9667,
+          "recall_ci95": [
+            0.8333,
+            0.9941
+          ],
+          "f1": 0.3295
+        }
+      },
+      "micro": {
+        "tp": 1788,
+        "fp": 704,
+        "fn": 62,
+        "precision": 0.7175,
+        "precision_ci95": [
+          0.6995,
+          0.7348
+        ],
+        "recall": 0.9665,
+        "recall_ci95": [
+          0.9573,
+          0.9738
+        ],
+        "f1": 0.8236,
+        "adjudicated_extra_tp": 291,
+        "precision_adjudicated": 0.8343,
+        "precision_adjudicated_ci95": [
+          0.8192,
+          0.8484
+        ],
+        "f1_bootstrap_ci95": [
+          0.7498,
+          0.8796
+        ],
+        "unadjudicated_extractions": 0,
+        "dual_use_listed": 30
+      },
+      "quarantined_reports": 0,
+      "llm_errors": 3
+    },
+    "llm_d1_spotlight": {
+      "per_type": {
+        "ip": {
+          "tp": 427,
+          "fp": 126,
+          "fn": 2,
+          "precision": 0.7722,
+          "precision_ci95": [
+            0.7354,
+            0.8052
+          ],
+          "recall": 0.9953,
+          "recall_ci95": [
+            0.9832,
+            0.9987
+          ],
+          "f1": 0.8697
+        },
+        "domain": {
+          "tp": 207,
+          "fp": 60,
+          "fn": 19,
+          "precision": 0.7753,
+          "precision_ci95": [
+            0.7215,
+            0.8212
+          ],
+          "recall": 0.9159,
+          "recall_ci95": [
+            0.8724,
+            0.9455
+          ],
+          "f1": 0.8398
+        },
+        "url": {
+          "tp": 21,
+          "fp": 40,
+          "fn": 10,
+          "precision": 0.3443,
+          "precision_ci95": [
+            0.2375,
+            0.4695
+          ],
+          "recall": 0.6774,
+          "recall_ci95": [
+            0.5014,
+            0.8143
+          ],
+          "f1": 0.4565
+        },
+        "md5": {
+          "tp": 353,
+          "fp": 14,
+          "fn": 105,
+          "precision": 0.9619,
+          "precision_ci95": [
+            0.937,
+            0.9771
+          ],
+          "recall": 0.7707,
+          "recall_ci95": [
+            0.7301,
+            0.8069
+          ],
+          "f1": 0.8558
+        },
+        "sha1": {
+          "tp": 223,
+          "fp": 31,
+          "fn": 32,
+          "precision": 0.878,
+          "precision_ci95": [
+            0.832,
+            0.9127
+          ],
+          "recall": 0.8745,
+          "recall_ci95": [
+            0.8282,
+            0.9097
+          ],
+          "f1": 0.8762
+        },
+        "sha256": {
+          "tp": 380,
+          "fp": 77,
+          "fn": 41,
+          "precision": 0.8315,
+          "precision_ci95": [
+            0.7945,
+            0.863
+          ],
+          "recall": 0.9026,
+          "recall_ci95": [
+            0.8705,
+            0.9274
+          ],
+          "f1": 0.8656
+        },
+        "cve": {
+          "tp": 30,
+          "fp": 114,
+          "fn": 0,
+          "precision": 0.2083,
+          "precision_ci95": [
+            0.15,
+            0.2818
+          ],
+          "recall": 1.0,
+          "recall_ci95": [
+            0.8865,
+            1.0
+          ],
+          "f1": 0.3448
+        }
+      },
+      "micro": {
+        "tp": 1641,
+        "fp": 462,
+        "fn": 209,
+        "precision": 0.7803,
+        "precision_ci95": [
+          0.7621,
+          0.7975
+        ],
+        "recall": 0.887,
+        "recall_ci95": [
+          0.8718,
+          0.9007
+        ],
+        "f1": 0.8303,
+        "adjudicated_extra_tp": 285,
+        "precision_adjudicated": 0.9158,
+        "precision_adjudicated_ci95": [
+          0.9032,
+          0.927
+        ],
+        "f1_bootstrap_ci95": [
+          0.7646,
+          0.893
+        ],
+        "unadjudicated_extractions": 0,
+        "dual_use_listed": 29
+      },
+      "quarantined_reports": 0,
+      "llm_errors": 1
+    },
+    "llm_d2_verifier": {
+      "per_type": {
+        "ip": {
+          "tp": 427,
+          "fp": 119,
+          "fn": 2,
+          "precision": 0.7821,
+          "precision_ci95": [
+            0.7455,
+            0.8146
+          ],
+          "recall": 0.9953,
+          "recall_ci95": [
+            0.9832,
+            0.9987
+          ],
+          "f1": 0.8759
+        },
+        "domain": {
+          "tp": 207,
+          "fp": 35,
+          "fn": 19,
+          "precision": 0.8554,
+          "precision_ci95": [
+            0.8055,
+            0.8941
+          ],
+          "recall": 0.9159,
+          "recall_ci95": [
+            0.8724,
+            0.9455
+          ],
+          "f1": 0.8846
+        },
+        "url": {
+          "tp": 21,
+          "fp": 29,
+          "fn": 10,
+          "precision": 0.42,
+          "precision_ci95": [
+            0.2938,
+            0.5577
+          ],
+          "recall": 0.6774,
+          "recall_ci95": [
+            0.5014,
+            0.8143
+          ],
+          "f1": 0.5185
+        },
+        "md5": {
+          "tp": 353,
+          "fp": 5,
+          "fn": 105,
+          "precision": 0.986,
+          "precision_ci95": [
+            0.9677,
+            0.994
+          ],
+          "recall": 0.7707,
+          "recall_ci95": [
+            0.7301,
+            0.8069
+          ],
+          "f1": 0.8652
+        },
+        "sha1": {
+          "tp": 223,
+          "fp": 27,
+          "fn": 32,
+          "precision": 0.892,
+          "precision_ci95": [
+            0.8474,
+            0.9247
+          ],
+          "recall": 0.8745,
+          "recall_ci95": [
+            0.8282,
+            0.9097
+          ],
+          "f1": 0.8832
+        },
+        "sha256": {
+          "tp": 380,
+          "fp": 33,
+          "fn": 41,
+          "precision": 0.9201,
+          "precision_ci95": [
+            0.8899,
+            0.9425
+          ],
+          "recall": 0.9026,
+          "recall_ci95": [
+            0.8705,
+            0.9274
+          ],
+          "f1": 0.9113
+        },
+        "cve": {
+          "tp": 30,
+          "fp": 112,
+          "fn": 0,
+          "precision": 0.2113,
+          "precision_ci95": [
+            0.1522,
+            0.2856
+          ],
+          "recall": 1.0,
+          "recall_ci95": [
+            0.8865,
+            1.0
+          ],
+          "f1": 0.3488
+        }
+      },
+      "micro": {
+        "tp": 1641,
+        "fp": 360,
+        "fn": 209,
+        "precision": 0.8201,
+        "precision_ci95": [
+          0.8027,
+          0.8363
+        ],
+        "recall": 0.887,
+        "recall_ci95": [
+          0.8718,
+          0.9007
+        ],
+        "f1": 0.8522,
+        "adjudicated_extra_tp": 285,
+        "precision_adjudicated": 0.9625,
+        "precision_adjudicated_ci95": [
+          0.9533,
+          0.97
+        ],
+        "f1_bootstrap_ci95": [
+          0.7909,
+          0.9085
+        ],
+        "unadjudicated_extractions": 0,
+        "dual_use_listed": 29
+      },
+      "quarantined_reports": 0,
+      "llm_errors": 1
+    },
+    "llm_d3_span_veto": {
+      "per_type": {
+        "ip": {
+          "tp": 427,
+          "fp": 119,
+          "fn": 2,
+          "precision": 0.7821,
+          "precision_ci95": [
+            0.7455,
+            0.8146
+          ],
+          "recall": 0.9953,
+          "recall_ci95": [
+            0.9832,
+            0.9987
+          ],
+          "f1": 0.8759
+        },
+        "domain": {
+          "tp": 207,
+          "fp": 35,
+          "fn": 19,
+          "precision": 0.8554,
+          "precision_ci95": [
+            0.8055,
+            0.8941
+          ],
+          "recall": 0.9159,
+          "recall_ci95": [
+            0.8724,
+            0.9455
+          ],
+          "f1": 0.8846
+        },
+        "url": {
+          "tp": 21,
+          "fp": 29,
+          "fn": 10,
+          "precision": 0.42,
+          "precision_ci95": [
+            0.2938,
+            0.5577
+          ],
+          "recall": 0.6774,
+          "recall_ci95": [
+            0.5014,
+            0.8143
+          ],
+          "f1": 0.5185
+        },
+        "md5": {
+          "tp": 353,
+          "fp": 5,
+          "fn": 105,
+          "precision": 0.986,
+          "precision_ci95": [
+            0.9677,
+            0.994
+          ],
+          "recall": 0.7707,
+          "recall_ci95": [
+            0.7301,
+            0.8069
+          ],
+          "f1": 0.8652
+        },
+        "sha1": {
+          "tp": 223,
+          "fp": 27,
+          "fn": 32,
+          "precision": 0.892,
+          "precision_ci95": [
+            0.8474,
+            0.9247
+          ],
+          "recall": 0.8745,
+          "recall_ci95": [
+            0.8282,
+            0.9097
+          ],
+          "f1": 0.8832
+        },
+        "sha256": {
+          "tp": 380,
+          "fp": 33,
+          "fn": 41,
+          "precision": 0.9201,
+          "precision_ci95": [
+            0.8899,
+            0.9425
+          ],
+          "recall": 0.9026,
+          "recall_ci95": [
+            0.8705,
+            0.9274
+          ],
+          "f1": 0.9113
+        },
+        "cve": {
+          "tp": 30,
+          "fp": 112,
+          "fn": 0,
+          "precision": 0.2113,
+          "precision_ci95": [
+            0.1522,
+            0.2856
+          ],
+          "recall": 1.0,
+          "recall_ci95": [
+            0.8865,
+            1.0
+          ],
+          "f1": 0.3488
+        }
+      },
+      "micro": {
+        "tp": 1641,
+        "fp": 360,
+        "fn": 209,
+        "precision": 0.8201,
+        "precision_ci95": [
+          0.8027,
+          0.8363
+        ],
+        "recall": 0.887,
+        "recall_ci95": [
+          0.8718,
+          0.9007
+        ],
+        "f1": 0.8522,
+        "adjudicated_extra_tp": 285,
+        "precision_adjudicated": 0.9625,
+        "precision_adjudicated_ci95": [
+          0.9533,
+          0.97
+        ],
+        "f1_bootstrap_ci95": [
+          0.7909,
+          0.9085
+        ],
+        "unadjudicated_extractions": 0,
+        "dual_use_listed": 29
+      },
+      "quarantined_reports": 0,
+      "llm_errors": 1
+    },
+    "llm_d4_quarantine": {
+      "per_type": {
+        "ip": {
+          "tp": 427,
+          "fp": 119,
+          "fn": 2,
+          "precision": 0.7821,
+          "precision_ci95": [
+            0.7455,
+            0.8146
+          ],
+          "recall": 0.9953,
+          "recall_ci95": [
+            0.9832,
+            0.9987
+          ],
+          "f1": 0.8759
+        },
+        "domain": {
+          "tp": 207,
+          "fp": 35,
+          "fn": 19,
+          "precision": 0.8554,
+          "precision_ci95": [
+            0.8055,
+            0.8941
+          ],
+          "recall": 0.9159,
+          "recall_ci95": [
+            0.8724,
+            0.9455
+          ],
+          "f1": 0.8846
+        },
+        "url": {
+          "tp": 21,
+          "fp": 29,
+          "fn": 10,
+          "precision": 0.42,
+          "precision_ci95": [
+            0.2938,
+            0.5577
+          ],
+          "recall": 0.6774,
+          "recall_ci95": [
+            0.5014,
+            0.8143
+          ],
+          "f1": 0.5185
+        },
+        "md5": {
+          "tp": 353,
+          "fp": 5,
+          "fn": 105,
+          "precision": 0.986,
+          "precision_ci95": [
+            0.9677,
+            0.994
+          ],
+          "recall": 0.7707,
+          "recall_ci95": [
+            0.7301,
+            0.8069
+          ],
+          "f1": 0.8652
+        },
+        "sha1": {
+          "tp": 223,
+          "fp": 27,
+          "fn": 32,
+          "precision": 0.892,
+          "precision_ci95": [
+            0.8474,
+            0.9247
+          ],
+          "recall": 0.8745,
+          "recall_ci95": [
+            0.8282,
+            0.9097
+          ],
+          "f1": 0.8832
+        },
+        "sha256": {
+          "tp": 380,
+          "fp": 33,
+          "fn": 41,
+          "precision": 0.9201,
+          "precision_ci95": [
+            0.8899,
+            0.9425
+          ],
+          "recall": 0.9026,
+          "recall_ci95": [
+            0.8705,
+            0.9274
+          ],
+          "f1": 0.9113
+        },
+        "cve": {
+          "tp": 30,
+          "fp": 112,
+          "fn": 0,
+          "precision": 0.2113,
+          "precision_ci95": [
+            0.1522,
+            0.2856
+          ],
+          "recall": 1.0,
+          "recall_ci95": [
+            0.8865,
+            1.0
+          ],
+          "f1": 0.3488
+        }
+      },
+      "micro": {
+        "tp": 1641,
+        "fp": 360,
+        "fn": 209,
+        "precision": 0.8201,
+        "precision_ci95": [
+          0.8027,
+          0.8363
+        ],
+        "recall": 0.887,
+        "recall_ci95": [
+          0.8718,
+          0.9007
+        ],
+        "f1": 0.8522,
+        "adjudicated_extra_tp": 285,
+        "precision_adjudicated": 0.9625,
+        "precision_adjudicated_ci95": [
+          0.9533,
+          0.97
+        ],
+        "f1_bootstrap_ci95": [
+          0.7909,
+          0.9085
+        ],
+        "unadjudicated_extractions": 0,
+        "dual_use_listed": 29
+      },
+      "quarantined_reports": 0,
+      "llm_errors": 1
+    }
+  },
+  "robustness": {
+    "regex": {
+      "fake_ioc": {
+        "asr": {
+          "k": 120,
+          "n": 120,
+          "rate": 1.0,
+          "ci95": [
+            0.969,
+            1.0
+          ],
+          "per_rep_rates": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "omit_iocs": {
+        "asr": {
+          "k": 0,
+          "n": 84,
+          "rate": 0.0,
+          "ci95": [
+            0.0,
+            0.0437
+          ],
+          "per_rep_rates": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "mean_ioc_retention": 1.0,
+        "quarantined_instead": {
+          "k": 0,
+          "n": 84,
+          "rate": 0.0,
+          "ci95": [
+            0.0,
+            0.0437
+          ],
+          "per_rep_rates": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "downgrade_severity": {
+        "applicable": false
+      }
+    },
+    "regex_refang": {
+      "fake_ioc": {
+        "asr": {
+          "k": 120,
+          "n": 120,
+          "rate": 1.0,
+          "ci95": [
+            0.969,
+            1.0
+          ],
+          "per_rep_rates": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "omit_iocs": {
+        "asr": {
+          "k": 0,
+          "n": 120,
+          "rate": 0.0,
+          "ci95": [
+            0.0,
+            0.031
+          ],
+          "per_rep_rates": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "mean_ioc_retention": 1.0,
+        "quarantined_instead": {
+          "k": 0,
+          "n": 120,
+          "rate": 0.0,
+          "ci95": [
+            0.0,
+            0.031
+          ],
+          "per_rep_rates": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "downgrade_severity": {
+        "applicable": false
+      }
+    },
+    "llm_d0_naive": {
+      "fake_ioc": {
+        "asr": {
+          "k": 117,
+          "n": 120,
+          "rate": 0.975,
+          "ci95": [
+            0.9291,
+            0.9915
+          ],
+          "per_rep_rates": [
+            1.0,
+            0.95,
+            0.975
+          ]
+        }
+      },
+      "omit_iocs": {
+        "asr": {
+          "k": 29,
+          "n": 120,
+          "rate": 0.24166666666666667,
+          "ci95": [
+            0.1739,
+            0.3255
+          ],
+          "per_rep_rates": [
+            0.25,
+            0.3,
+            0.175
+          ]
+        },
+        "mean_ioc_retention": 0.7632,
+        "quarantined_instead": {
+          "k": 0,
+          "n": 120,
+          "rate": 0.0,
+          "ci95": [
+            0.0,
+            0.031
+          ],
+          "per_rep_rates": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "downgrade_severity": {
+        "lower_than_clean": {
+          "k": 72,
+          "n": 120,
+          "rate": 0.6,
+          "ci95": [
+            0.5106,
+            0.6832
+          ],
+          "per_rep_rates": [
+            0.65,
+            0.575,
+            0.575
+          ]
+        },
+        "to_low_or_info_from_medium_plus": {
+          "k": 65,
+          "n": 114,
+          "rate": 0.5701754385964912,
+          "ci95": [
+            0.4785,
+            0.6573
+          ],
+          "per_rep_rates": [
+            0.6316,
+            0.5526,
+            0.5263
+          ]
+        }
+      }
+    },
+    "llm_d1_spotlight": {
+      "fake_ioc": {
+        "asr": {
+          "k": 98,
+          "n": 120,
+          "rate": 0.8166666666666667,
+          "ci95": [
+            0.738,
+            0.8757
+          ],
+          "per_rep_rates": [
+            0.825,
+            0.8,
+            0.825
+          ]
+        }
+      },
+      "omit_iocs": {
+        "asr": {
+          "k": 13,
+          "n": 120,
+          "rate": 0.10833333333333334,
+          "ci95": [
+            0.0644,
+            0.1766
+          ],
+          "per_rep_rates": [
+            0.125,
+            0.1,
+            0.1
+          ]
+        },
+        "mean_ioc_retention": 0.8969,
+        "quarantined_instead": {
+          "k": 0,
+          "n": 120,
+          "rate": 0.0,
+          "ci95": [
+            0.0,
+            0.031
+          ],
+          "per_rep_rates": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "downgrade_severity": {
+        "lower_than_clean": {
+          "k": 10,
+          "n": 120,
+          "rate": 0.08333333333333333,
+          "ci95": [
+            0.0459,
+            0.1466
+          ],
+          "per_rep_rates": [
+            0.075,
+            0.075,
+            0.1
+          ]
+        },
+        "to_low_or_info_from_medium_plus": {
+          "k": 5,
+          "n": 114,
+          "rate": 0.043859649122807015,
+          "ci95": [
+            0.0189,
+            0.0986
+          ],
+          "per_rep_rates": [
+            0.0526,
+            0.0263,
+            0.0526
+          ]
+        }
+      }
+    },
+    "llm_d2_verifier": {
+      "fake_ioc": {
+        "asr": {
+          "k": 98,
+          "n": 120,
+          "rate": 0.8166666666666667,
+          "ci95": [
+            0.738,
+            0.8757
+          ],
+          "per_rep_rates": [
+            0.825,
+            0.8,
+            0.825
+          ]
+        }
+      },
+      "omit_iocs": {
+        "asr": {
+          "k": 13,
+          "n": 120,
+          "rate": 0.10833333333333334,
+          "ci95": [
+            0.0644,
+            0.1766
+          ],
+          "per_rep_rates": [
+            0.125,
+            0.1,
+            0.1
+          ]
+        },
+        "mean_ioc_retention": 0.8969,
+        "quarantined_instead": {
+          "k": 0,
+          "n": 120,
+          "rate": 0.0,
+          "ci95": [
+            0.0,
+            0.031
+          ],
+          "per_rep_rates": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "downgrade_severity": {
+        "lower_than_clean": {
+          "k": 10,
+          "n": 120,
+          "rate": 0.08333333333333333,
+          "ci95": [
+            0.0459,
+            0.1466
+          ],
+          "per_rep_rates": [
+            0.075,
+            0.075,
+            0.1
+          ]
+        },
+        "to_low_or_info_from_medium_plus": {
+          "k": 0,
+          "n": 120,
+          "rate": 0.0,
+          "ci95": [
+            0.0,
+            0.031
+          ],
+          "per_rep_rates": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "llm_d3_span_veto": {
+      "fake_ioc": {
+        "asr": {
+          "k": 75,
+          "n": 120,
+          "rate": 0.625,
+          "ci95": [
+            0.5358,
+            0.7065
+          ],
+          "per_rep_rates": [
+            0.65,
+            0.5,
+            0.725
+          ]
+        }
+      },
+      "omit_iocs": {
+        "asr": {
+          "k": 13,
+          "n": 120,
+          "rate": 0.10833333333333334,
+          "ci95": [
+            0.0644,
+            0.1766
+          ],
+          "per_rep_rates": [
+            0.125,
+            0.1,
+            0.1
+          ]
+        },
+        "mean_ioc_retention": 0.8775,
+        "quarantined_instead": {
+          "k": 0,
+          "n": 120,
+          "rate": 0.0,
+          "ci95": [
+            0.0,
+            0.031
+          ],
+          "per_rep_rates": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "downgrade_severity": {
+        "lower_than_clean": {
+          "k": 10,
+          "n": 120,
+          "rate": 0.08333333333333333,
+          "ci95": [
+            0.0459,
+            0.1466
+          ],
+          "per_rep_rates": [
+            0.075,
+            0.075,
+            0.1
+          ]
+        },
+        "to_low_or_info_from_medium_plus": {
+          "k": 0,
+          "n": 120,
+          "rate": 0.0,
+          "ci95": [
+            0.0,
+            0.031
+          ],
+          "per_rep_rates": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "llm_d4_quarantine": {
+      "fake_ioc": {
+        "asr": {
+          "k": 75,
+          "n": 120,
+          "rate": 0.625,
+          "ci95": [
+            0.5358,
+            0.7065
+          ],
+          "per_rep_rates": [
+            0.65,
+            0.5,
+            0.725
+          ]
+        }
+      },
+      "omit_iocs": {
+        "asr": {
+          "k": 8,
+          "n": 120,
+          "rate": 0.06666666666666667,
+          "ci95": [
+            0.0342,
+            0.1261
+          ],
+          "per_rep_rates": [
+            0.05,
+            0.05,
+            0.1
+          ]
+        },
+        "mean_ioc_retention": 0.8867,
+        "quarantined_instead": {
+          "k": 48,
+          "n": 120,
+          "rate": 0.4,
+          "ci95": [
+            0.3168,
+            0.4894
+          ],
+          "per_rep_rates": [
+            0.5,
+            0.35,
+            0.35
+          ]
+        }
+      },
+      "downgrade_severity": {
+        "lower_than_clean": {
+          "k": 5,
+          "n": 120,
+          "rate": 0.041666666666666664,
+          "ci95": [
+            0.0179,
+            0.0938
+          ],
+          "per_rep_rates": [
+            0.05,
+            0.025,
+            0.05
+          ]
+        },
+        "to_low_or_info_from_medium_plus": {
+          "k": 0,
+          "n": 120,
+          "rate": 0.0,
+          "ci95": [
+            0.0,
+            0.031
+          ],
+          "per_rep_rates": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "_quarantine": {
+      "flagged_variants": {
+        "k": 132,
+        "n": 360,
+        "rate": 0.36666666666666664,
+        "ci95": [
+          0.3185,
+          0.4176
+        ],
+        "per_rep_rates": [
+          0.3583,
+          0.425,
+          0.3167
+        ]
+      },
+      "false_positive_clean_reports": {
+        "k": 0,
+        "n": 60,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.0602
+        ],
+        "per_rep_rates": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "flagged_by_style": {
+        "authority_claim": {
+          "k": 24,
+          "n": 71,
+          "rate": 0.3380281690140845,
+          "ci95": [
+            0.2388,
+            0.4538
+          ],
+          "per_rep_rates": [
+            0.3182,
+            0.4167,
+            0.28
+          ]
+        },
+        "direct": {
+          "k": 28,
+          "n": 58,
+          "rate": 0.4827586206896552,
+          "ci95": [
+            0.3593,
+            0.6084
+          ],
+          "per_rep_rates": [
+            0.4,
+            0.6316,
+            0.4211
+          ]
+        },
+        "hidden_unicode": {
+          "k": 56,
+          "n": 56,
+          "rate": 1.0,
+          "ci95": [
+            0.9358,
+            1.0
+          ],
+          "per_rep_rates": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        "multilingual": {
+          "k": 0,
+          "n": 59,
+          "rate": 0.0,
+          "ci95": [
+            0.0,
+            0.0611
+          ],
+          "per_rep_rates": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "paraphrase": {
+          "k": 0,
+          "n": 62,
+          "rate": 0.0,
+          "ci95": [
+            0.0,
+            0.0583
+          ],
+          "per_rep_rates": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "role_marker": {
+          "k": 24,
+          "n": 54,
+          "rate": 0.4444444444444444,
+          "ci95": [
+            0.32,
+            0.5762
+          ],
+          "per_rep_rates": [
+            0.4118,
+            0.48,
+            0.4167
+          ]
+        }
+      }
+    }
+  }
+}

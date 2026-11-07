@@ -1,0 +1,6 @@
+SYNTHETIC REPORT R2 (written for tests; not a real advisory)
+
+The "GreyMoth" implant beacons every 60 seconds to 198.51.100.23 over TCP/443. A second
+stage is fetched from http://static-assets.example.org/a/b.ps1 and its SHA1 is
+da39a3ee5e6b4b0d3255bfef95601890afd80709. The same actor exploited CVE-2099-2222 and CVE-2099-3333.
+File names such as payload.exe or loader.dll are not network indicators.
