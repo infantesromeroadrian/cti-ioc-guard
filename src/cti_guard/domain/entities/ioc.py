@@ -59,6 +59,13 @@ class IOC:
     first_seen: Optional[datetime] = None
     last_seen: Optional[datetime] = None
     reputation_score: Optional[float] = None  # 0.0-1.0 (0=clean, 1=malicious)
+    # Provenance: where the literal value sits in the source text. ``verified`` means a
+    # deterministic check confirmed the value is syntactically valid AND literally present.
+    # Only verified IOCs may feed alerting (see AlertService.should_alert_for_ioc).
+    start: Optional[int] = None
+    end: Optional[int] = None
+    extractor: str = ""
+    verified: bool = False
 
     def __post_init__(self) -> None:
         """Validate IOC data."""
@@ -107,6 +114,10 @@ class IOC:
             "first_seen": self.first_seen.isoformat() if self.first_seen else None,
             "last_seen": self.last_seen.isoformat() if self.last_seen else None,
             "reputation_score": self.reputation_score,
+            "start": self.start,
+            "end": self.end,
+            "extractor": self.extractor,
+            "verified": self.verified,
         }
 
     def __str__(self) -> str:

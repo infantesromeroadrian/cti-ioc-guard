@@ -92,6 +92,13 @@ class RegexIOCExtractor:
         iocs.extend(self._extract_hashes(text, source_document_id))
         iocs.extend(self._extract_cves(text, source_document_id))
 
+        for ioc in iocs:
+            # Regex matches are literal substrings of the text by construction.
+            idx = text.find(ioc.value)
+            ioc.extractor = self.get_extractor_name()
+            if idx >= 0:
+                ioc.start, ioc.end, ioc.verified = idx, idx + len(ioc.value), True
+
         logger.info(
             f"✅ Extracted {len(iocs)} IOCs",
             source="RegexIOCExtractor",

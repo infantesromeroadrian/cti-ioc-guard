@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import JSON, Column, DateTime, Float, String, Text
+from sqlalchemy import JSON, Boolean, Column, DateTime, Float, Integer, String, Text
 from sqlalchemy.orm import Session
 
 from cti_guard.domain.entities import IOC, IOCConfidence, IOCType
@@ -40,6 +40,12 @@ class IOCModel(Base):
     first_seen = Column(DateTime, nullable=True)
     last_seen = Column(DateTime, nullable=True)
     reputation_score = Column(Float, nullable=True)
+
+    # Provenance
+    start = Column(Integer, nullable=True)
+    end = Column(Integer, nullable=True)
+    extractor = Column(String(50), nullable=False, default="")
+    verified = Column(Boolean, nullable=False, default=False)
 
 
 class SQLiteIOCRepository(BaseRepository):
@@ -165,6 +171,10 @@ class SQLiteIOCRepository(BaseRepository):
                 first_seen=ioc.first_seen or datetime.utcnow(),
                 last_seen=ioc.last_seen or datetime.utcnow(),
                 reputation_score=ioc.reputation_score,
+                start=ioc.start,
+                end=ioc.end,
+                extractor=ioc.extractor,
+                verified=ioc.verified,
             )
             session.add(model)
 
@@ -183,4 +193,8 @@ class SQLiteIOCRepository(BaseRepository):
             first_seen=model.first_seen,
             last_seen=model.last_seen,
             reputation_score=model.reputation_score,
+            start=model.start,
+            end=model.end,
+            extractor=model.extractor or "",
+            verified=bool(model.verified),
         )

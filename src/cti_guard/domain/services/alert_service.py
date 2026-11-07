@@ -41,6 +41,7 @@ class AlertService:
         Determine if an IOC should trigger an alert.
 
         Business rules:
+        - IOC must be verified (valid and literally present in the source text)
         - HIGH confidence network indicators (IP, domain, URL)
         - OR file hashes with malicious reputation (>= 0.7)
 
@@ -50,6 +51,10 @@ class AlertService:
         Returns:
             True if alert should be generated
         """
+        # Never alert on an IOC that was not deterministically verified against the source.
+        if not ioc.verified:
+            return False
+
         is_high_conf_network = ioc.is_high_confidence and ioc.is_network_indicator
         is_malicious_hash = ioc.is_hash and ioc.is_malicious
 

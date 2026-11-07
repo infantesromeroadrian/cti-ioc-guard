@@ -1,0 +1,83 @@
+{
+  "totalResults": 2,
+  "vulnerabilities": [
+    {
+      "cve": {
+        "id": "CVE-2099-0001",
+        "published": "2099-01-01T00:00:00.000",
+        "lastModified": "2099-01-02T00:00:00.000",
+        "descriptions": [
+          {
+            "lang": "en",
+            "value": "Synthetic demo entry. A remote code execution flaw in ExampleCMS is exploited in the wild; operators observed beaconing to 203.0.113.45 and payload staging at hxxps://cdn-update[.]example[.]net/stage2.bin (SHA256 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08). See also CVE-2098-1234."
+          }
+        ],
+        "metrics": {
+          "cvssMetricV31": [
+            {
+              "cvssData": {
+                "baseScore": 9.8,
+                "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+                "baseSeverity": "CRITICAL",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentialityImpact": "HIGH",
+                "integrityImpact": "HIGH",
+                "availabilityImpact": "HIGH"
+              }
+            }
+          ]
+        },
+        "weaknesses": [],
+        "references": [
+          {
+            "url": "https://example.test/advisory"
+          }
+        ],
+        "configurations": []
+      }
+    },
+    {
+      "cve": {
+        "id": "CVE-2099-0002",
+        "published": "2099-01-01T00:00:00.000",
+        "lastModified": "2099-01-02T00:00:00.000",
+        "descriptions": [
+          {
+            "lang": "en",
+            "value": "Synthetic demo entry. SQL injection in ExampleShop 2.1 allows data theft. Attackers use the domain shop-login-verify.example.org and a dropper with MD5 5d41402abc4b2a76b9719d911017c592."
+          }
+        ],
+        "metrics": {
+          "cvssMetricV31": [
+            {
+              "cvssData": {
+                "baseScore": 7.5,
+                "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+                "baseSeverity": "HIGH",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentialityImpact": "HIGH",
+                "integrityImpact": "HIGH",
+                "availabilityImpact": "HIGH"
+              }
+            }
+          ]
+        },
+        "weaknesses": [],
+        "references": [
+          {
+            "url": "https://example.test/advisory"
+          }
+        ],
+        "configurations": []
+      }
+    }
+  ]
+}

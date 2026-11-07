@@ -66,6 +66,10 @@ def ioc_to_response(ioc: IOC) -> IOCResponse:
         tags=ioc.tags,
         related_cves=ioc.related_cves,
         context=ioc.context,
+        verified=ioc.verified,
+        extractor=ioc.extractor,
+        start=ioc.start,
+        end=ioc.end,
     )
 
 

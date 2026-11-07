@@ -24,6 +24,10 @@ class IOCResponse(BaseModel):
     tags: list[str] = Field(default_factory=list, description="Associated tags")
     related_cves: list[str] = Field(default_factory=list, description="Related CVE IDs")
     context: str | None = Field(default=None, description="Context where IOC was found")
+    verified: bool = Field(default=False, description="Deterministically verified against source")
+    extractor: str = Field(default="", description="Extractor that proposed the IOC")
+    start: int | None = Field(default=None, description="Start offset in the source text")
+    end: int | None = Field(default=None, description="End offset in the source text")
 
     class Config:
         json_schema_extra = {
