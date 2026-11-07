@@ -21,7 +21,7 @@ Base = declarative_base()
 
 # Global lock for table creation (prevents SQLite concurrency issues)
 _table_creation_lock = threading.Lock()
-_tables_created = False
+_initialised_urls: set[str] = set()
 
 
 class BaseRepository:
@@ -50,18 +50,11 @@ class BaseRepository:
             bind=self.engine,
         )
 
-        # Create tables with global lock to prevent concurrent SQLite errors
-        global _tables_created
+        # Create tables once per database URL (guarded to avoid concurrent SQLite DDL)
         with _table_creation_lock:
-            if not _tables_created:
-                try:
-                    Base.metadata.create_all(bind=self.engine, checkfirst=True)
-                    _tables_created = True
-                except Exception as e:
-                    # Ignore "table already exists" errors (edge case)
-                    if "already exists" not in str(e).lower():
-                        raise
-                    _tables_created = True  # Mark as done even if tables exist
+            if self.db_url not in _initialised_urls:
+                Base.metadata.create_all(bind=self.engine, checkfirst=True)
+                _initialised_urls.add(self.db_url)
 
         logger.info(
             "✅ Database initialized",
