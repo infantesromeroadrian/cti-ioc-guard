@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     ollama_api_key: SecretStr = SecretStr("")
     llm_base_url: str = ""
     llm_api_key: SecretStr = SecretStr("")
-    llm_max_output_tokens: int = Field(default=2048, ge=64, le=16384)
+    llm_max_output_tokens: int = Field(default=6144, ge=64, le=16384)
     llm_timeout_seconds: int = Field(default=120, ge=5, le=900)
 
     api_cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:8000"])

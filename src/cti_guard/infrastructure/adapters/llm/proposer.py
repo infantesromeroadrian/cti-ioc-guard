@@ -22,6 +22,7 @@ from cti_guard.infrastructure.adapters.llm.schemas import (
     ExtractionOutput,
     SeverityOutput,
 )
+from cti_guard.infrastructure.config.settings import settings
 from cti_guard.security.spotlight import new_nonce, wrap_untrusted
 from cti_guard.security.verifier import Candidate
 
@@ -84,14 +85,17 @@ class LLMProposer:
         hardened: bool = True,
         chunk_size: int = 3000,
         overlap: int = 200,
-        max_output_tokens: int = 6144,
+        max_output_tokens: int | None = None,
         nonce_fn: Callable[[str], str] | None = None,
     ) -> None:
         self.client = client
         self.hardened = hardened
         self.chunk_size = chunk_size
         self.overlap = overlap
-        self.max_output_tokens = max_output_tokens
+        # settings.llm_max_output_tokens is the single source unless explicitly overridden
+        self.max_output_tokens = (
+            settings.llm_max_output_tokens if max_output_tokens is None else max_output_tokens
+        )
         self.nonce_fn = nonce_fn
 
     def _render(self, text: str) -> tuple[str, str]:

@@ -168,3 +168,18 @@ def test_llm_ioc_absent_from_source_produces_no_alert(report_text):
         "198.51.100.99", iocs[0].ioc_type, iocs[0].confidence, "doc-1", iocs[0].extracted_at
     )
     assert not forged.verified and not svc.should_alert_for_ioc(forged)
+
+
+def test_configured_max_output_tokens_reaches_the_llm_call(monkeypatch):
+    from cti_guard.infrastructure.config.settings import settings
+
+    assert settings.llm_max_output_tokens == 6144  # documented default
+    monkeypatch.setattr(settings, "llm_max_output_tokens", 1234)
+    client = scripted(indicators())
+    LLMProposer(client).propose("text without indicators")
+    assert {call[3] for call in client.calls if "indicators" in call[2].get("properties", {})} == {
+        1234
+    }
+    explicit = scripted(indicators())
+    LLMProposer(explicit, max_output_tokens=321).propose("text")
+    assert 321 in {call[3] for call in explicit.calls}
